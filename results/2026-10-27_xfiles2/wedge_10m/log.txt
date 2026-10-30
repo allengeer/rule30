@@ -1,0 +1,10 @@
+wedge checkpoint 1000000
+wedge checkpoint 2000000
+wedge checkpoint 3000000
+wedge checkpoint 4000000
+wedge checkpoint 5000000
+wedge checkpoint 6000000
+wedge checkpoint 7000000
+wedge checkpoint 8000000
+wedge checkpoint 9000000
+wedge checkpoint 10000000

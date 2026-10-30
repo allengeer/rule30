@@ -1,0 +1,9 @@
+.venv/
+build/
+__pycache__/
+*.i64
+*.mx
+*.u16
+*.f32
+viz/tiles/
+viz/tmp/

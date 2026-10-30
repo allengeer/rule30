@@ -1,0 +1,12 @@
+trace row 0/1000000
+trace row 100000/1000000
+trace row 200000/1000000
+trace row 300000/1000000
+trace row 400000/1000000
+trace row 500000/1000000
+trace row 600000/1000000
+trace row 700000/1000000
+trace row 800000/1000000
+trace row 900000/1000000
+trace done
+build/xfiles trace 1000000 $D/trace_1m  265.05s user 2.04s system 99% cpu 4:29.23 total

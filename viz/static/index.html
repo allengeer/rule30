@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rule 30 Observatory</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <h1>Rule 30 Observatory</h1>
+  <nav>
+    <button class="tab active" data-tab="tri">Triangle</button>
+    <button class="tab" data-tab="centre">Centre column · 10⁹</button>
+  </nav>
+  <div class="src">
+    <label>Source
+      <select id="source"></select>
+    </label>
+    <label id="liveNWrap">rows <input id="liveN" type="number" min="64" max="16384" step="64" value="4096"></label>
+    <span id="srcInfo" class="muted"></span>
+  </div>
+  <button id="png">Export PNG</button>
+</header>
+
+<main>
+  <section id="viewTri" class="view">
+    <canvas id="tri"></canvas>
+    <div id="hover" class="readout"></div>
+    <div id="busy" class="busy"></div>
+  </section>
+  <section id="viewCentre" class="view hidden">
+    <canvas id="cen"></canvas>
+    <div id="chover" class="readout"></div>
+    <div id="cbusy" class="busy"></div>
+  </section>
+
+  <aside>
+    <div id="panelTri">
+      <details open>
+        <summary>Navigate</summary>
+        <div class="row">
+          <label>n <input id="goN" type="number" value="0"></label>
+          <label>s <input id="goS" type="number" value="0"></label>
+          <label>cells/px <input id="goZ" type="number" value="1" step="any"></label>
+          <button id="go">Go</button>
+        </div>
+        <div class="row presets">
+          <button data-preset="fit">Whole triangle</button>
+          <button data-preset="apex">Apex</button>
+          <button data-preset="edge4095">Right edge, n = 4095</button>
+          <button data-preset="edge65535">Right edge, n = 65535</button>
+          <button data-preset="wedge">Wedge boundary</button>
+          <button data-preset="diag">A period-32 diagonal</button>
+          <button data-preset="tie">Centre, last tie 195,112</button>
+        </div>
+      </details>
+
+      <details open>
+        <summary>Layers</summary>
+        <div class="layer"><input type="checkbox" id="L_cells" checked><span class="sw" style="background:#c9d1d9"></span>
+          <label for="L_cells">Cells (black = light)</label></div>
+
+        <div class="layer"><input type="checkbox" id="L_tomb" checked><span class="sw grad"></span>
+          <label for="L_tomb">Tombstones by chain length</label></div>
+        <div class="sub">
+          <div class="dual">
+            <label>min <input id="Lmin" type="range" min="2" max="63" value="2"><b id="LminV">2</b></label>
+            <label>max <input id="Lmax" type="range" min="2" max="63" value="63"><b id="LmaxV">63</b></label>
+          </div>
+          <div class="legend" id="tombLegend"></div>
+          <label class="inline"><input type="checkbox" id="L_dots" checked> long chains as dots when zoomed out</label>
+        </div>
+
+        <div class="layer"><input type="checkbox" id="L_pat"><span class="sw" style="background:#ff4fd8"></span>
+          <label for="L_pat">Bit pattern</label> <input id="pat" value="11011" size="12" spellcheck="false"></div>
+        <div class="sub muted" id="patNote"></div>
+
+        <div class="layer"><input type="checkbox" id="L_wedge" checked><span class="sw" style="background:#7ee787"></span>
+          <label for="L_wedge">Left wedge s = −n/4 &amp; period-32 diagonals</label></div>
+
+        <div class="layer"><input type="checkbox" id="L_pow2"><span class="sw" style="background:#f2cc60"></span>
+          <label for="L_pow2">Rows with 2<sup>k</sup> | n+1</label></div>
+        <div class="sub"><label>k <input id="pow2k" type="range" min="1" max="20" value="8"><b id="pow2kV">8</b></label></div>
+
+        <div class="layer"><input type="checkbox" id="L_centre" checked><span class="sw" style="background:#58a6ff"></span>
+          <label for="L_centre">Centre column + running excess strip</label></div>
+
+        <div class="layer"><input type="checkbox" id="L_coin"><span class="sw coin"></span>
+          <label for="L_coin">Coin mode: deviation z of density</label></div>
+        <div class="sub muted">blue = fewer black than a fair coin, red = more; |z| ≥ 4 saturates. At 1 cell/px z is taken over 16×16 cells.</div>
+      </details>
+
+      <details open>
+        <summary>Visible window</summary>
+        <div id="stats" class="stats"></div>
+        <canvas id="hist" width="300" height="170"></canvas>
+        <div class="muted small">Bars: chains by length (log scale). Line: the fair-coin null, each extra cell halves the count.</div>
+      </details>
+
+      <details>
+        <summary>Scale &amp; sources</summary>
+        <div id="scaleInfo" class="muted small"></div>
+      </details>
+    </div>
+
+    <div id="panelCentre" class="hidden">
+      <details open>
+        <summary>Range</summary>
+        <div class="row">
+          <label>from <input id="cLo" type="text" value="0"></label>
+          <label>to <input id="cHi" type="text" value="1e9"></label>
+          <button id="cGo">Go</button>
+        </div>
+        <div class="row presets">
+          <button data-cpreset="all">All 10⁹</button>
+          <button data-cpreset="first1m">First 10⁶</button>
+          <button data-cpreset="lasttie">Around last tie</button>
+          <button data-cpreset="min3m">Closest approach after 10⁶</button>
+          <button data-cpreset="bits">First 400 bits</button>
+        </div>
+      </details>
+      <details open>
+        <summary>Pattern search</summary>
+        <div class="row"><input id="cPat" value="11011" size="14" spellcheck="false"><button id="cFind">Find in view</button><button id="cClear">Clear</button></div>
+        <div id="cFindOut" class="stats"></div>
+      </details>
+      <details open>
+        <summary>Window statistics</summary>
+        <div id="cStats" class="stats"></div>
+        <canvas id="cHist" width="300" height="170"></canvas>
+        <div class="muted small">Runs of black (light) and white (blue) by length vs the fair-coin ½-per-cell line.</div>
+      </details>
+    </div>
+  </aside>
+</main>
+<script type="module" src="app.js"></script>
+</body>
+</html>
