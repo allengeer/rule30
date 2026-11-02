@@ -45,7 +45,16 @@ Chart: `frontier_vs_damage.png`. Numbers: `summary.json`. Coordinates as before:
 - Correction, on the record: in the interim report the panel said the damage speed slows with run length and that both speeds shared an early slowdown. Both claims were wrong. The longer data show the damage speed flat in time; only the frontier had the early excess.
 - Wolfram's 0.252 is real, but it is the frontier's early transient, not its asymptotic speed.
 
-**Replication pending (Riker).** 4 seeds × 10⁷ damage steps (`damage_10m/`), to confirm the damage speed at the frontier's own depth.
+**Replication (Riker).** 4 fresh seeds × 10⁷ damage steps (`damage_10m/`, 100 minutes), the frontier's own depth:
+
+| t | 10⁶ | 2×10⁶ | 5×10⁶ | 10⁷ |
+|---|---|---|---|---|
+| x(t)/t, mean of 4 | 0.24344 | 0.24350 | 0.24345 | **0.24342 ± 0.00022** |
+
+- The damage speed is flat from 10⁶ to 10⁷, as it was from 10⁴ to 10⁶.
+- At 10⁷ it equals the frontier's 0.2433–0.2434 to within 0.0001.
+- These 4 seeds sit 0.0005 above the 64-seed 10⁶ mean at every t, including t = 10⁶. That is seed-to-seed scatter (about 1σ for a 4-seed mean), not a trend.
+- Pooled, the left damage speed is 0.2430–0.2434, and the frontier sits inside that range. The finding replicates.
 
 **Questions.**
 - Wesley: what is the early transient? Between 10⁴ and 10⁶ rows the frontier sat up to 1,200 cells left of where the chaos could reach from the origin. Those diagonals are outside the light cone but not yet periodic, so they should be still-settling transients. Test against the transient lengths in OEIS A363346.
