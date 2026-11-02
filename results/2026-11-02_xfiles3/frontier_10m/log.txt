@@ -1,3 +1,6 @@
 frontier row 0 L=-1
 frontier row 1000000 L=757320
 frontier row 2000000 L=1514007
+frontier row 3000000 L=2271609
+frontier row 4000000 L=3028290
+frontier row 5000000 L=3785312
