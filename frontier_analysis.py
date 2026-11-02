@@ -47,16 +47,19 @@ for sub in sorted(glob.glob(f"{R}/damage_*/")):
     files = sorted(glob.glob(f"{sub}damage_*.i32"))
     if not files:
         continue
-    sp = []
+    sp, ch = [], []
     for f in files:
         x = np.fromfile(f, np.int32).astype(float)
         T = len(x)
         t = np.arange(1, T + 1, dtype=float)
         sp.append(np.polyfit(t[T // 4:], x[T // 4:], 1)[0])
+        ch.append(x[-1] / T)
     name = sub.rstrip("/").split("/")[-1]
     dm[name] = {"T": T, "seeds": len(sp), "mean": float(np.mean(sp)),
                 "sem": float(np.std(sp, ddof=1) / np.sqrt(len(sp))) if len(sp) > 1 else None,
-                "sd": float(np.std(sp, ddof=1)) if len(sp) > 1 else None}
+                "sd": float(np.std(sp, ddof=1)) if len(sp) > 1 else None,
+                "chord_mean": float(np.mean(ch)),
+                "chord_sem": float(np.std(ch, ddof=1) / np.sqrt(len(ch))) if len(ch) > 1 else None}
 out["damage"] = dm
 json.dump(out, open(f"{R}/summary.json", "w"), indent=1)
 print(json.dumps(out, indent=1))
@@ -71,8 +74,8 @@ fig, ax = plt.subplots(1, 2, figsize=(12, 4.5))
 step = max(1, N // 20000)
 ax[0].plot(m[step::step], 1 - L[step::step] / m[step::step], lw=0.6, color="#1f5fa8", label="frontier (m − L)/m")
 for name, d in dm.items():
-    ax[0].axhline(d["mean"], color="#c0392b" if "1m" in name else "#e67e22", lw=1,
-                  label=f"damage speed, {name}: {d['mean']:.4f} ± {d['sem']:.4f}")
+    ax[0].axhline(d["chord_mean"], color="#c0392b" if "1m" in name else "#e67e22", lw=1,
+                  label=f"damage x(T)/T, {name}: {d['chord_mean']:.4f} ± {d['chord_sem'] or 0:.4f}")
 ax[0].axhline(0.252, color="grey", ls=":", lw=1, label="Wolfram 2019: ≈0.252 over first 10⁵ steps")
 ax[0].set_xscale("log"); ax[0].set_ylim(0.235, 0.26); ax[0].set_xlabel("row m")
 ax[0].set_ylabel("leftward speed (cells/step)"); ax[0].legend(fontsize=8); ax[0].set_title("Frozen-wedge frontier vs damage speed")

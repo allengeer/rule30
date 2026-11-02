@@ -4,3 +4,11 @@ frontier row 2000000 L=1514007
 frontier row 3000000 L=2271609
 frontier row 4000000 L=3028290
 frontier row 5000000 L=3785312
+frontier row 6000000 L=4541814
+frontier row 7000000 L=5297319
+frontier row 8000000 L=6053617
+frontier row 9000000 L=6810155
+
+real	48m53.423s
+user	48m23.374s
+sys	0m1.728s
