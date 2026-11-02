@@ -245,7 +245,77 @@ static int run_rightrun(int64_t N, const char *dir) {
     return 0;
 }
 
+// ---- frontier: window-free edge of the frozen wedge ---------------------------------------
+// Every wedge diagonal has a period dividing 32, so diagonal d breaks at row m iff
+// cell(m, d) != cell(m-32, d), with d the distance from the left edge. L(m) is the smallest
+// such d: the leftmost non-periodic cell of row m. Writes frontier.i64: L(m) for m = 0..N-1
+// (-1 for m < 32).
+#define FP 32
+static int run_frontier(int64_t N, const char *dir) {
+    int64_t MID = 128 + N, NW = (2 * N + 256) / 64 + 4;
+    u64 *hist[FP + 1];
+    for (int k = 0; k <= FP; k++) hist[k] = alloc(NW);
+    hist[0][MID >> 6] |= 1ULL << (MID & 63);
+    int64_t *L = malloc(sizeof(int64_t) * N);
+    for (int64_t m = 0; m < N; m++) {
+        u64 *row = hist[m % (FP + 1)];
+        L[m] = -1;
+        if (m >= FP) {
+            u64 *old = hist[(m - FP) % (FP + 1)];   // cell d of row m-32 sits 32 bits higher
+            for (int64_t w = (MID - m) >> 6; w <= (MID + m) >> 6; w++) {
+                u64 v = row[w] ^ ((old[w] >> FP) | (old[w + 1] << (64 - FP)));
+                if (v) { L[m] = w * 64 + __builtin_ctzll(v) - (MID - m); break; }
+            }
+        }
+        u64 *nxt = hist[(m + 1) % (FP + 1)];
+        for (int64_t w = (MID - m - 1) >> 6; w <= (MID + m + 1) >> 6; w++)
+            nxt[w] = lsh(row, w) ^ (row[w] | rsh(row, w));
+        if (m % 1000000 == 0) fprintf(stderr, "frontier row %lld L=%lld\n", (long long)m, (long long)L[m]);
+    }
+    FILE *f = open_or_die(dir, "frontier.i64"); fwrite(L, sizeof(int64_t), N, f); fclose(f);
+    return 0;
+}
+
+// ---- damage: left spreading speed of a one-cell flip in a random row -----------------------
+// Ring of W = 2T+128 cells from fair random bits (splitmix64), flip the cell at 0.3 W (the left
+// front needs ~T/4 of room, the right front, at speed 1, needs T, so it never wraps), evolve
+// both copies T steps and record how far left of the flip the leftmost difference has moved.
+// Writes damage_<seed>.i32: the front distance after each step.
+static u64 splitmix(u64 *s) {
+    u64 z = (*s += 0x9e3779b97f4a7c15ULL);
+    z = (z ^ (z >> 30)) * 0xbf58476d1ce4e5b9ULL;
+    z = (z ^ (z >> 27)) * 0x94d049bb133111ebULL;
+    return z ^ (z >> 31);
+}
+static void ring_step(u64 *x, u64 *y, int64_t NW) {
+    x[0] = x[NW - 2]; x[NW - 1] = x[1];             // ghost words: words 1..NW-2 form the ring
+    for (int64_t w = 1; w < NW - 1; w++) y[w] = lsh(x, w) ^ (x[w] | rsh(x, w));
+}
+static int run_damage(int64_t T, u64 seed, const char *dir) {
+    int64_t NW = (2 * T + 128) / 64 + 2, W = (NW - 2) * 64;
+    u64 *a = alloc(NW), *b = alloc(NW), *a2 = alloc(NW), *b2 = alloc(NW), s = seed;
+    for (int64_t w = 1; w < NW - 1; w++) a[w] = b[w] = splitmix(&s);
+    int64_t c = 64 + 3 * W / 10;                    // bit index, word 1 holds ring cells 0..63
+    b[c >> 6] ^= 1ULL << (c & 63);
+    int32_t *front = malloc(sizeof(int32_t) * T);
+    int64_t lo = c;                                 // leftmost difference can move left by <= 1 per step
+    for (int64_t t = 0; t < T; t++) {
+        ring_step(a, a2, NW); ring_step(b, b2, NW);
+        u64 *x = a; a = a2; a2 = x; x = b; b = b2; b2 = x;
+        int64_t w = (lo - 1) >> 6;
+        u64 v = (a[w] ^ b[w]) & (~0ULL << ((lo - 1) & 63));
+        while (!v) { w++; v = a[w] ^ b[w]; }
+        lo = w * 64 + __builtin_ctzll(v);
+        front[t] = (int32_t)(c - lo);
+    }
+    char name[64]; snprintf(name, sizeof name, "damage_%llu.i32", (unsigned long long)seed);
+    FILE *f = open_or_die(dir, name); fwrite(front, sizeof(int32_t), T, f); fclose(f);
+    return 0;
+}
+
 int main(int argc, char **argv) {
+    if (argc >= 4 && !strcmp(argv[1], "frontier")) return run_frontier(atoll(argv[2]), argv[3]);
+    if (argc >= 5 && !strcmp(argv[1], "damage")) return run_damage(atoll(argv[2]), strtoull(argv[3], 0, 10), argv[4]);
     if (argc >= 4 && !strcmp(argv[1], "trace")) return run_trace(atoll(argv[2]), argv[3]);
     if (argc >= 4 && !strcmp(argv[1], "rightrun")) return run_rightrun(atoll(argv[2]), argv[3]);
     if (argc >= 6 && !strcmp(argv[1], "wedge")) return run_wedge(atoll(argv[2]), atoll(argv[3]), atoll(argv[4]), argv[5]);

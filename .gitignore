@@ -7,3 +7,4 @@ __pycache__/
 *.f32
 viz/tiles/
 viz/tmp/
+*.i32
