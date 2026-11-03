@@ -8,3 +8,5 @@ __pycache__/
 viz/tiles/
 viz/tmp/
 *.i32
+q01/escape
+q01/part*.txt
