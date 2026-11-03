@@ -7,3 +7,7 @@ __pycache__/
 *.f32
 viz/tiles/
 viz/tmp/
+*.i32
+q01/escape
+q01/part*.txt
+q01/tree
